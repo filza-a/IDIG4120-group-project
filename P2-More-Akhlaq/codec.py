@@ -238,7 +238,7 @@ class Codec:
 
         # Save encoded data
         with open(output_file, "w") as f:
-            json.dump(compressed, f)
+            json.dump(compressed, f, separators=(",", ":"))
 
         print(f"Encoded image saved to: {output_file}")
 
