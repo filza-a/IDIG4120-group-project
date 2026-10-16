@@ -76,7 +76,7 @@ class Quantisation:
         # Apply quantisation to the DCT block
         quantised_block = np.round(block / self.q_steps).astype(int)
 
-        return quantised_block, {"q_step": self.q_steps}
+        return quantised_block
 
     def decode(self, quantised, metadata):
         return np.asarray(quantised, dtype=np.float64) * metadata["q_step"]
@@ -101,7 +101,7 @@ class RLE:
         # Record remaining zeros at the end
         encoded.append((zero_count, None))
 
-        return encoded, {"dtype": values.dtype.str}
+        return encoded
 
     def decode(self, encoded, metadata):
         values = []
@@ -114,7 +114,7 @@ class RLE:
 
             values.append(value)
 
-        return np.array(values, dtype=metadata["dtype"])
+        return np.array(values, dtype=np.int64)
 
 
 class DCT:
@@ -127,11 +127,11 @@ class DCT:
         shifted_block = block.astype(np.float64) - self.shift
         dct_block = dctn(shifted_block, norm="ortho")
 
-        return dct_block, {"shift": self.shift}
+        return dct_block
 
     def decode(self, coefficients, metadata):
         shifted_block = idctn(coefficients, norm="ortho")
-        block = shifted_block + metadata["shift"]
+        block = shifted_block + self.shift
 
         return block
 
@@ -163,7 +163,7 @@ class ZigZag:
         indices = self._indices(block_size)
         zigzag_values = np.array([quantised_block[row, col] for row, col in indices])
 
-        return zigzag_values, {"block_size": block_size}
+        return zigzag_values
 
     def decode(self, values, metadata):
         n = metadata["block_size"]
@@ -196,6 +196,15 @@ class Codec:
             "channel_order": channel_names,
             "dtype": "uint8",
         }
+        
+        metadata["q_step"] = next(
+        (
+            stage.q_steps
+            for stage in self.stages
+            if stage.name == "quantisation"
+        ),
+        None,
+        )
 
         for channel_index, channel_name in enumerate(channel_names):
             channel = image_array[:, :, channel_index]
@@ -208,20 +217,10 @@ class Codec:
             encoded_blocks = []
 
             for block in blocks:
-                stage_records = []
                 for stage in self.stages:
-                    block, stage_metadata = stage.encode(block)
+                    block = stage.encode(block)
 
-                    if stage.name == "quantisation":
-                        metadata["q_step"] = stage_metadata["q_step"]
-
-                    stage_records.append(
-                        {"name": stage.name, "metadata": stage_metadata}
-                    )
-
-                encoded_blocks.append(
-                    {"payload": block, "block_metadata": stage_records}
-                )
+                encoded_blocks.append(block)
 
             encoded_image[channel_name] = encoded_blocks
 
@@ -239,7 +238,7 @@ class Codec:
 
         # Save encoded data
         with open(output_file, "w") as f:
-            json.dump(compressed, f)
+            json.dump(compressed, f, separators=(",", ":"))
 
         print(f"Encoded image saved to: {output_file}")
 
@@ -268,13 +267,10 @@ class Codec:
             encoded_blocks = encoded_data[channel]
 
             for encoded_block in encoded_blocks:
-                block = encoded_block["payload"]
-                block_metadata = encoded_block["block_metadata"]
+                block = encoded_block
 
-                for stage, stage_data in zip(
-                    reversed(self.stages), reversed(block_metadata)
-                ):
-                    block = stage.decode(block, stage_data["metadata"])
+                for stage in reversed(self.stages):
+                    block = stage.decode(block, metadata)
 
                 decoded_blocks.append(block)
 
