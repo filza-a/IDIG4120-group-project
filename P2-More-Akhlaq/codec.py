@@ -176,7 +176,7 @@ class ZigZag:
 
 
 class Codec:
-    def __init__(self, stages=None, block_size=8, output_dir="compressed"):
+    def __init__(self, stages=None, block_size=8, output_dir="compressed_outputs"):
         self.stages = list(stages)
         self.block_size = block_size
         self.block_tranform = Transform(block_size)
