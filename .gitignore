@@ -1,1 +1,5 @@
 __pycache__/
+compressed_outputs/
+decompressed_outputs/
+encoded_outputs/
+encoded_image.json

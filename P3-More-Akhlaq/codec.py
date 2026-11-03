@@ -185,6 +185,16 @@ class Codec:
     def compress(self, image, output_file="compressed_image.json"):
 
         image_array = np.asarray(image)
+        
+        if image_array.ndim != 3 or image_array.shape[2] != 3:
+            raise ValueError("Input must be a RGB image")
+        
+        if image_array.dtype != np.uint8:
+            raise ValueError("Input must have type uint8")
+        
+        if image_array.shape[0] == 0 or image_array.shape[1] == 0:
+            raise ValueError("Input should not be empty")
+        
         height, width, channels = image_array.shape
         encoded_image = {}
         channel_names = ["Red", "Green", "Blue"]
