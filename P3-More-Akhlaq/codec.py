@@ -185,9 +185,10 @@ class Codec:
     def compress(self, image, output_file="compressed_image.json"):
 
         image_array = np.asarray(image)
+        original_ndim = image_array.ndim
         
-        if image_array.ndim != 3 or image_array.shape[2] != 3:
-            raise ValueError("Input must be a RGB image")
+        if original_ndim < 2 or original_ndim > 3 or (original_ndim == 3 and image_array.shape[2] < 1):
+            raise ValueError("Input must have atleast 1 channel")
         
         if image_array.dtype != np.uint8:
             raise ValueError("Input must have type uint8")
@@ -195,9 +196,15 @@ class Codec:
         if image_array.shape[0] == 0 or image_array.shape[1] == 0:
             raise ValueError("Input should not be empty")
         
+        # if image is 2d add new axis to note its channel
+        if original_ndim == 2:
+            image_array = image_array[:, :, np.newaxis]
+        
+        
         height, width, channels = image_array.shape
+            
+        channel_names = [f"channel_{index}" for index in range(channels)]
         encoded_image = {}
-        channel_names = ["Red", "Green", "Blue"]
 
         metadata = {
             "height": height,
@@ -205,6 +212,7 @@ class Codec:
             "channels": channels,
             "channel_order": channel_names,
             "dtype": "uint8",
+            "original_ndim": original_ndim,
         }
         
         metadata["q_step"] = next(
@@ -289,7 +297,10 @@ class Codec:
             decoded_channels.append(channel)
 
         image = np.stack(decoded_channels, axis=-1)
-
         image = np.clip(np.round(image), 0, 255)
-
-        return image.astype(metadata["dtype"])
+        image = image.astype(metadata["dtype"])
+        
+        if metadata.get("original_ndim") == 2:
+            image = image[:,:, 0]
+        
+        return image
