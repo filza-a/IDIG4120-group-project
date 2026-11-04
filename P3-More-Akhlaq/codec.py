@@ -249,16 +249,14 @@ class Codec:
             "encoded_data": encoded_image,
         }
 
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
         # Save inside encoded_outputs folder
-        output_file = self.output_dir / Path(output_file).name
+        output_file_path = self.output_dir / Path(output_file).name
 
         # Save encoded data
-        with open(output_file, "w") as f:
+        with open(output_file_path, "w") as f:
             json.dump(compressed, f, separators=(",", ":"))
 
-        print(f"Encoded image saved to: {output_file}")
+        print(f"Encoded image saved to: {output_file_path}")
 
         return compressed
 
