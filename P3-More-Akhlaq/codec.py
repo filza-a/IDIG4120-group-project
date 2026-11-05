@@ -188,7 +188,7 @@ class Codec:
         original_ndim = image_array.ndim
         
         if original_ndim < 2 or original_ndim > 3 or (original_ndim == 3 and image_array.shape[2] < 1):
-            raise ValueError("Input must have atleast 1 channel")
+            raise ValueError("Input must be 2D or 3D with atleast 1 channel")
         
         if image_array.dtype != np.uint8:
             raise ValueError("Input must have type uint8")
