@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.fft import dctn, idctn
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import json
+import tempfile
 
 
 class Transform:
@@ -252,9 +253,26 @@ class Codec:
         # Save inside encoded_outputs folder
         output_file_path = self.output_dir / Path(output_file).name
 
-        # Save encoded data
-        with open(output_file_path, "w") as f:
-            json.dump(compressed, f, separators=(",", ":"))
+        # Save safely using a temporary file
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=self.output_dir,
+                suffix=".json",
+                delete=False
+            ) as f:
+                temp_path = Path(f.name)
+                json.dump(compressed, f, separators=(",", ":"))
+
+            temp_path.replace(output_file_path)
+
+        finally:
+            if temp_path is not None:
+                temp_path.unlink(missing_ok=True)
 
         print(f"Encoded image saved to: {output_file_path}")
 
