@@ -5,3 +5,12 @@ compressed_image/
 decompressed_outputs/
 encoded_outputs/
 encoded_image.json
+
+# Ignore system specific files
+.DS_Store
+
+# Ignore cache files
+__pycache__/
+
+# Personal P3 working notebook
+P3-More-Akhlaq/p3-Filza-temp.ipynb
